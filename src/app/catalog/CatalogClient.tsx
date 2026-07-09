@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { formatCentsCompact } from "@/lib/money";
 
@@ -63,10 +63,11 @@ export default function CatalogClient({
   initialProductId?: string;
 }) {
   const router = useRouter();
+  const [localProducts, setLocalProducts] = useState(products);
   const [productId, setProductId] = useState(initialProductId ?? products[0]?.id ?? "");
   const product = useMemo(
-    () => products.find((p) => p.id === productId) ?? products[0],
-    [products, productId],
+    () => localProducts.find((p) => p.id === productId) ?? localProducts[0],
+    [localProducts, productId],
   );
 
   const [tierId, setTierId] = useState<string>(product?.tiers[0]?.id ?? "");
@@ -82,6 +83,10 @@ export default function CatalogClient({
   const [editingTierPrice, setEditingTierPrice] = useState(false);
   const [editingCell, setEditingCell] = useState<string | null>(null);
 
+  useEffect(() => {
+    setLocalProducts(products);
+  }, [products]);
+
   function run(fn: () => Promise<ActionResult>, onSuccess?: () => void) {
     setErrors([]);
     startTransition(async () => {
@@ -89,12 +94,41 @@ export default function CatalogClient({
       if (result.ok) {
         onSuccess?.();
         router.refresh();
-      }
-      else setErrors(result.errors);
+      } else setErrors(result.errors);
     });
   }
 
-  if (products.length === 0 && !showProductForm) {
+  function updateLocalCell(featureId: string, tierId: string, cell: Cell) {
+    setLocalProducts((prev) =>
+      prev.map((product) => ({
+        ...product,
+        features: product.features.map((feature) =>
+          feature.id === featureId
+            ? {
+                ...feature,
+                cells: {
+                  ...feature.cells,
+                  [tierId]: cell,
+                },
+              }
+            : feature,
+        ),
+      })),
+    );
+  }
+
+  function updateLocalTierPrice(tierId: string, basePriceCents: number) {
+    setLocalProducts((prev) =>
+      prev.map((product) => ({
+        ...product,
+        tiers: product.tiers.map((tier) =>
+          tier.id === tierId ? { ...tier, basePriceCents } : tier,
+        ),
+      })),
+    );
+  }
+
+  if (localProducts.length === 0 && !showProductForm) {
     return (
       <div className="card">
         <div className="empty">
@@ -143,9 +177,9 @@ export default function CatalogClient({
           />
         )}
 
-        {products.length > 0 && (
+        {localProducts.length > 0 && (
           <div className="pills" style={{ marginTop: showProductForm ? 14 : 0 }}>
-            {products.map((p) => (
+            {localProducts.map((p) => (
               <button
                 key={p.id}
                 className="pill"
@@ -243,7 +277,10 @@ export default function CatalogClient({
                     onSubmit={(values) =>
                       run(
                         () => updateTierPrice({ tierId: tier.id, basePriceDollars: values.price }),
-                        () => setEditingTierPrice(false),
+                        () => {
+                          updateLocalTierPrice(tier.id, Math.round(Number(values.price) * 100));
+                          setEditingTierPrice(false);
+                        },
                       )
                     }
                   />
@@ -330,7 +367,28 @@ export default function CatalogClient({
                                       tierId: activeTierId,
                                       ...payload,
                                     }),
-                                  () => setEditingCell(null),
+                                  () => {
+                                    updateLocalCell(f.id, activeTierId, {
+                                      availability: payload.availability,
+                                      pricingModel:
+                                        payload.availability === "ADDON"
+                                          ? (payload.pricingModel ?? null)
+                                          : null,
+                                      amountCents:
+                                        payload.availability === "ADDON" &&
+                                        payload.pricingModel !== "PERCENT_OF_PRODUCT" &&
+                                        payload.amountDollars != null
+                                          ? Math.round(Number(payload.amountDollars) * 100)
+                                          : null,
+                                      percentBps:
+                                        payload.availability === "ADDON" &&
+                                        payload.pricingModel === "PERCENT_OF_PRODUCT" &&
+                                        payload.percent != null
+                                          ? Math.round(Number(payload.percent) * 100)
+                                          : null,
+                                    });
+                                    setEditingCell(null);
+                                  },
                                 )
                               }
                             />

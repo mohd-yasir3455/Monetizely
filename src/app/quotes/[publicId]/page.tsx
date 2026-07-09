@@ -29,6 +29,10 @@ const dateFormat: Intl.DateTimeFormatOptions = {
   day: "numeric",
 };
 
+function asDate(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
 export default async function QuotePage({ params }: { params: Promise<{ publicId: string }> }) {
   try {
     const { publicId } = await params;
@@ -85,11 +89,11 @@ export default async function QuotePage({ params }: { params: Promise<{ publicId
             </div>
             <div>
               <div className="k">Quote date</div>
-              <div className="v">{quote.createdAt.toLocaleDateString("en-US", dateFormat)}</div>
+              <div className="v">{asDate(quote.createdAt).toLocaleDateString("en-US", dateFormat)}</div>
             </div>
             <div>
               <div className="k">Valid until</div>
-              <div className="v">{quote.validUntil.toLocaleDateString("en-US", dateFormat)}</div>
+              <div className="v">{asDate(quote.validUntil).toLocaleDateString("en-US", dateFormat)}</div>
             </div>
           </div>
 

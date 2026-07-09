@@ -96,7 +96,9 @@ test("create a catalog entry, build a quote, and open the shared quote URL", asy
   const shareUrl = page.url();
 
   await expect(page.getByRole("heading", { name: QUOTE_NAME })).toBeVisible();
-  await expect(page.getByText("E2E Corporation")).toBeVisible();
+  await expect(page.locator(".doc-summary-chip").filter({ hasText: "Customer" })).toContainText(
+    "E2E Corporation",
+  );
   await expect(page.getByText("Analytics Suite", { exact: true })).toBeVisible();
 
   // Every line item shows how it was calculated.
@@ -110,7 +112,7 @@ test("create a catalog entry, build a quote, and open the shared quote URL", asy
   const anonPage = await anonymous.newPage();
   await anonPage.goto(shareUrl);
   await expect(anonPage.getByRole("heading", { name: QUOTE_NAME })).toBeVisible();
-  await expect(anonPage.getByText("$17,550.00")).toBeVisible();
+  await expect(anonPage.locator(".doc-total-card")).toContainText("$17,550.00");
   await anonymous.close();
 
   /* ------------- and it appears in the saved list with the same total */
