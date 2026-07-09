@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { percentToBps } from "@/lib/money";
+import { getActionErrorMessages } from "@/lib/errors";
 import { computeQuote, type SelectedAddon } from "@/lib/pricing";
 import { prisma } from "@/lib/prisma";
 import { createQuoteSchema, zodMessages } from "@/lib/validation";
@@ -136,6 +137,9 @@ export async function createQuote(input: unknown): Promise<CreateQuoteResult> {
       return { ok: false, errors: [e.message] };
     }
     console.error(e);
-    return { ok: false, errors: ["Something went wrong saving the quote. Try again."] };
+    return {
+      ok: false,
+      errors: getActionErrorMessages(e, "Something went wrong saving the quote. Try again."),
+    };
   }
 }

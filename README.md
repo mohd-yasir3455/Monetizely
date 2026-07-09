@@ -58,6 +58,7 @@ Point it at a scratch database, not production.
 3. **Set environment variables** in Vercel (Project → Settings → Environment Variables):
    - `DATABASE_URL` → the **pooled** connection string
    - `DIRECT_URL` → the **direct** connection string
+   - Do **not** reuse the pooled `-pooler` URL for `DIRECT_URL`; Prisma schema commands need the non-pooler host.
 4. **Deploy.** The build script runs `prisma generate` before `next build`, so the client is always
    generated against the current schema.
 5. **Create the tables and seed once**, from your machine, with the same `.env` values:
@@ -69,6 +70,18 @@ Point it at a scratch database, not production.
 Two connection strings, not one: serverless functions open and drop connections constantly, so runtime
 queries go through the pooler, while `prisma db push` needs a direct session to issue DDL. Getting
 this wrong is the usual reason a Prisma app builds fine on Vercel and then times out on first query.
+
+### Deployment checks
+
+- If Vercel shows `Missing required environment variables: DATABASE_URL, DIRECT_URL`, add both vars
+  and redeploy.
+- If the UI says it cannot reach the database, double-check that `DATABASE_URL` is the pooled URL and
+  `DIRECT_URL` is the direct one.
+- If the first deploy succeeds but pages fail to load data, seed the database once with:
+  ```bash
+  npm run db:push
+  npm run db:seed
+  ```
 
 ---
 

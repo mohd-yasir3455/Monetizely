@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { dollarsToCents, percentToBps } from "@/lib/money";
+import { getActionErrorMessages } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import {
   createFeatureSchema,
@@ -18,12 +19,8 @@ export type ActionResult = { ok: true } | { ok: false; errors: string[] };
 
 function fail(error: unknown): ActionResult {
   if (error instanceof z.ZodError) return { ok: false, errors: zodMessages(error) };
-  // Prisma's unique-constraint violation.
-  if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
-    return { ok: false, errors: ["That name is already used. Pick a different one."] };
-  }
   console.error(error);
-  return { ok: false, errors: ["Something went wrong saving that. Try again."] };
+  return { ok: false, errors: getActionErrorMessages(error, "Something went wrong saving that. Try again.") };
 }
 
 function done(): ActionResult {
