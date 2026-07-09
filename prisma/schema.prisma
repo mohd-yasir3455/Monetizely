@@ -1,0 +1,143 @@
+// Postgres via Prisma.
+//
+// Two halves that deliberately do not reference each other:
+//
+//   1. The catalog (Product / Tier / Feature / FeatureAvailability) is live and
+//      editable.
+//   2. A saved Quote is a frozen snapshot. It stores names, rates and computed
+//      cents rather than foreign keys into the catalog, so that editing a tier
+//      price tomorrow cannot silently rewrite a quote a customer already has a
+//      link to. See the README for the reasoning.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Availability {
+  INCLUDED
+  ADDON
+  NOT_AVAILABLE
+}
+
+enum PricingModel {
+  FIXED_MONTHLY
+  PER_SEAT
+  PERCENT_OF_PRODUCT
+}
+
+enum LineItemKind {
+  BASE
+  ADDON
+  DISCOUNT
+}
+
+model Product {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  tiers     Tier[]
+  features  Feature[]
+}
+
+model Tier {
+  id             String    @id @default(cuid())
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name           String
+  /// Per seat, per month, in integer cents.
+  basePriceCents Int
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+
+  availabilities FeatureAvailability[]
+
+  @@unique([productId, name])
+  @@index([productId])
+}
+
+model Feature {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  availabilities FeatureAvailability[]
+
+  @@unique([productId, name])
+  @@index([productId])
+}
+
+/// The (feature x tier) cell of the matrix. This is where the interesting data
+/// lives: the same feature can be included on one tier, a $500 add-on on
+/// another, and simply unavailable on a third.
+model FeatureAvailability {
+  id           String       @id @default(cuid())
+  featureId    String
+  feature      Feature      @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  tierId       String
+  tier         Tier         @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  availability Availability @default(NOT_AVAILABLE)
+
+  /// Set only when availability = ADDON.
+  pricingModel PricingModel?
+  /// Cents. Set for FIXED_MONTHLY and PER_SEAT.
+  amountCents  Int?
+  /// Basis points. Set for PERCENT_OF_PRODUCT. 1000 = 10%.
+  percentBps   Int?
+
+  @@unique([featureId, tierId])
+  @@index([tierId])
+}
+
+model Quote {
+  id       String @id @default(cuid())
+  /// Unguessable, URL-safe. The share link is /quotes/{publicId}.
+  publicId String @unique
+
+  name         String
+  customerName String
+
+  // --- frozen snapshot of the catalog at save time ---
+  productName    String
+  tierName       String
+  basePriceCents Int
+  seats          Int
+  termKey        String
+  termMonths     Int
+  termDiscountBps Int
+
+  // --- frozen computed totals ---
+  baseCents           Int
+  subtotalCents       Int
+  overallDiscountBps  Int
+  discountAmountCents Int
+  totalCents          Int
+
+  createdAt  DateTime @default(now())
+  validUntil DateTime
+
+  lineItems QuoteLineItem[]
+}
+
+model QuoteLineItem {
+  id          String       @id @default(cuid())
+  quoteId     String
+  quote       Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  sortOrder   Int
+  kind        LineItemKind
+  label       String
+  /// The visible arithmetic shown to the customer, rendered verbatim.
+  calculation String
+  /// Negative for the discount line, so line items always sum to totalCents.
+  amountCents Int
+
+  @@index([quoteId])
+}
