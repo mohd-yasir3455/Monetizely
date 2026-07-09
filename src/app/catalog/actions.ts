@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 
+import { CACHE_TAGS } from "@/lib/data";
 import { dollarsToCents, percentToBps } from "@/lib/money";
 import { getActionErrorMessages } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
@@ -27,6 +28,8 @@ function done(): ActionResult {
   revalidatePath("/catalog");
   revalidatePath("/quotes/new");
   revalidatePath("/");
+  revalidateTag(CACHE_TAGS.catalog);
+  revalidateTag(CACHE_TAGS.home);
   return { ok: true };
 }
 

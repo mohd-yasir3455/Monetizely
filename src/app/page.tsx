@@ -1,17 +1,12 @@
 import Link from "next/link";
 
 import PageErrorState from "@/app/components/PageErrorState";
+import { getDashboardCounts } from "@/lib/data";
 import { getPageErrorMessage } from "@/lib/errors";
-import { prisma } from "@/lib/prisma";
-
-export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   try {
-    const [productCount, quoteCount] = await Promise.all([
-      prisma.product.count(),
-      prisma.quote.count(),
-    ]);
+    const { productCount, quoteCount } = await getDashboardCounts();
 
     return (
       <>

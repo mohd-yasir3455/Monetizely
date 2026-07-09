@@ -1,9 +1,10 @@
 "use server";
 
 import { nanoid } from "nanoid";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 
+import { CACHE_TAGS } from "@/lib/data";
 import { percentToBps } from "@/lib/money";
 import { getActionErrorMessages } from "@/lib/errors";
 import { computeQuote, type SelectedAddon } from "@/lib/pricing";
@@ -130,6 +131,8 @@ export async function createQuote(input: unknown): Promise<CreateQuoteResult> {
 
     revalidatePath("/quotes");
     revalidatePath("/");
+    revalidateTag(CACHE_TAGS.quotes);
+    revalidateTag(CACHE_TAGS.home);
     return { ok: true, publicId: quote.publicId };
   } catch (e) {
     if (e instanceof z.ZodError) return { ok: false, errors: zodMessages(e) };

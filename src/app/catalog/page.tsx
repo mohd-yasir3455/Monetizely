@@ -1,6 +1,6 @@
 import PageErrorState from "@/app/components/PageErrorState";
+import { getCatalogProducts } from "@/lib/data";
 import { getPageErrorMessage } from "@/lib/errors";
-import { prisma } from "@/lib/prisma";
 
 import CatalogClient, { type CatalogProduct } from "./CatalogClient";
 
@@ -14,16 +14,7 @@ export default async function CatalogPage({
   try {
     const { product: selectedId } = await searchParams;
 
-    const products = await prisma.product.findMany({
-      orderBy: { createdAt: "asc" },
-      include: {
-        tiers: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-        features: {
-          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-          include: { availabilities: true },
-        },
-      },
-    });
+    const products = await getCatalogProducts();
 
     const serialized: CatalogProduct[] = products.map((p) => ({
       id: p.id,

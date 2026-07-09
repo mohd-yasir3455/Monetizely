@@ -1,26 +1,14 @@
 import Link from "next/link";
 
 import PageErrorState from "@/app/components/PageErrorState";
+import { getQuoteBuilderProducts } from "@/lib/data";
 import { getPageErrorMessage } from "@/lib/errors";
-import { prisma } from "@/lib/prisma";
 
 import QuoteBuilder, { type BuilderProduct } from "./QuoteBuilder";
 
-export const dynamic = "force-dynamic";
-
 export default async function NewQuotePage() {
   try {
-    const products = await prisma.product.findMany({
-      orderBy: { createdAt: "asc" },
-      include: {
-        tiers: {
-          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-          include: {
-            availabilities: { include: { feature: true } },
-          },
-        },
-      },
-    });
+    const products = await getQuoteBuilderProducts();
 
     const usable: BuilderProduct[] = products
       .filter((p) => p.tiers.length > 0)

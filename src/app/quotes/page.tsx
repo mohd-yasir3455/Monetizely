@@ -1,16 +1,14 @@
 import Link from "next/link";
 
 import PageErrorState from "@/app/components/PageErrorState";
+import { getSavedQuotes } from "@/lib/data";
 import { getPageErrorMessage } from "@/lib/errors";
 import { formatCents } from "@/lib/money";
-import { prisma } from "@/lib/prisma";
 import { getTerm } from "@/lib/terms";
-
-export const dynamic = "force-dynamic";
 
 export default async function QuotesPage() {
   try {
-    const quotes = await prisma.quote.findMany({ orderBy: { createdAt: "desc" } });
+    const quotes = await getSavedQuotes();
 
     return (
       <>

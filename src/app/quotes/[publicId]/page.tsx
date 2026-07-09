@@ -2,18 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import PageErrorState from "@/app/components/PageErrorState";
+import { getQuoteByPublicId } from "@/lib/data";
 import { getPageErrorMessage } from "@/lib/errors";
 import { formatBps, formatCents } from "@/lib/money";
-import { prisma } from "@/lib/prisma";
-
-export const dynamic = "force-dynamic";
-
-async function getQuote(publicId: string) {
-  return prisma.quote.findUnique({
-    where: { publicId },
-    include: { lineItems: { orderBy: { sortOrder: "asc" } } },
-  });
-}
 
 export async function generateMetadata({
   params,
@@ -24,7 +15,7 @@ export async function generateMetadata({
   let quote = null;
 
   try {
-    quote = await getQuote(publicId);
+    quote = await getQuoteByPublicId(publicId);
   } catch {
     return { title: "Quote unavailable" };
   }
@@ -41,7 +32,7 @@ const dateFormat: Intl.DateTimeFormatOptions = {
 export default async function QuotePage({ params }: { params: Promise<{ publicId: string }> }) {
   try {
     const { publicId } = await params;
-    const quote = await getQuote(publicId);
+    const quote = await getQuoteByPublicId(publicId);
     if (!quote) notFound();
 
     const termLabel =
