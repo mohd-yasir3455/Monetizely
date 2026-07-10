@@ -146,6 +146,13 @@ export default function QuoteBuilder({ products }: { products: BuilderProduct[] 
   }
 
   const canSave = !pending && preview !== null && trimmedName.length > 0 && trimmedCustomerName.length > 0;
+  const selectedAddonCount = preview?.lineItems.filter((li) => li.kind === "ADDON").length ?? 0;
+  const discountSummary =
+    preview == null
+      ? null
+      : preview.discountAmountCents > 0
+        ? `${discount}% quote discount`
+        : "No quote discount";
 
   return (
     <>
@@ -392,32 +399,69 @@ export default function QuoteBuilder({ products }: { products: BuilderProduct[] 
                   </div>
                 </div>
 
+                <div className="preview-facts">
+                  <div className="preview-fact">
+                    <span>Seats</span>
+                    <strong className="num">{seats}</strong>
+                  </div>
+                  <div className="preview-fact">
+                    <span>Base rate</span>
+                    <strong className="num">{formatCentsCompact(tier.basePriceCents)} / seat / month</strong>
+                  </div>
+                  <div className="preview-fact">
+                    <span>Add-ons</span>
+                    <strong>{selectedAddonCount === 0 ? "None selected" : `${selectedAddonCount} selected`}</strong>
+                  </div>
+                  <div className="preview-fact">
+                    <span>Discount</span>
+                    <strong>{discountSummary}</strong>
+                  </div>
+                </div>
+
                 <div className="preview-list">
                   {preview.lineItems.map((li) => (
                     <div
                       key={li.label}
                       className={`preview-item${li.kind === "DISCOUNT" ? " is-discount" : ""}`}
                     >
-                      <div className="preview-main">
-                        <div className="preview-label">{li.label}</div>
-                        <div className="preview-kind">
-                          {li.kind === "BASE"
-                            ? "Base price"
-                            : li.kind === "ADDON"
-                              ? "Selected add-on"
-                              : "Quote discount"}
+                      <div className="preview-item-head">
+                        <div className="preview-main">
+                          <div className="preview-label-row">
+                            <div className="preview-label">{li.label}</div>
+                            <span className={`preview-badge preview-badge-${li.kind.toLowerCase()}`}>
+                              {li.kind === "BASE"
+                                ? "Base"
+                                : li.kind === "ADDON"
+                                  ? "Add-on"
+                                  : "Discount"}
+                            </span>
+                          </div>
+                          <div className="preview-kind">
+                            {li.kind === "BASE"
+                              ? "Core subscription charge"
+                              : li.kind === "ADDON"
+                                ? "Optional feature pricing"
+                                : "Applied to the full quote subtotal"}
+                          </div>
                         </div>
+                        <strong className="preview-amount num">{formatCents(li.amountCents)}</strong>
                       </div>
-
-                      <div className="preview-side">
-                        <div className="preview-side-top">
-                          <span className="preview-calc-label">Calculation details</span>
-                          <strong className="preview-amount num">{formatCents(li.amountCents)}</strong>
-                        </div>
-                        <div className="calc preview-calc">{li.calculation}</div>
-                      </div>
+                      <div className="calc preview-calc">{li.calculation}</div>
                     </div>
                   ))}
+                </div>
+
+                <div className="preview-footer">
+                  <div className="preview-footer-row">
+                    <span>Subtotal before overall discount</span>
+                    <strong className="num">{formatCents(preview.subtotalCents)}</strong>
+                  </div>
+                  {preview.discountAmountCents > 0 && (
+                    <div className="preview-footer-row">
+                      <span>Overall discount applied</span>
+                      <strong className="num">-{formatCents(preview.discountAmountCents)}</strong>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
