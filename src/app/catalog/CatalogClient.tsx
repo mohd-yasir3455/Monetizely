@@ -82,6 +82,13 @@ export default function CatalogClient({
   const [showFeatureForm, setShowFeatureForm] = useState(false);
   const [editingTierPrice, setEditingTierPrice] = useState(false);
   const [editingCell, setEditingCell] = useState<string | null>(null);
+  const featureCount = product?.features.length ?? 0;
+  const includedCount =
+    product?.features.filter((feature) => feature.cells[activeTierId]?.availability === "INCLUDED")
+      .length ?? 0;
+  const addonCount =
+    product?.features.filter((feature) => feature.cells[activeTierId]?.availability === "ADDON")
+      .length ?? 0;
 
   useEffect(() => {
     setLocalProducts(products);
@@ -154,10 +161,36 @@ export default function CatalogClient({
         </div>
       )}
 
+      {product && (
+        <section className="catalog-overview">
+          <div className="catalog-overview-card">
+            <span>Active product</span>
+            <strong>{product.name}</strong>
+          </div>
+          <div className="catalog-overview-card">
+            <span>Working tier</span>
+            <strong>{tier?.name ?? "No tier yet"}</strong>
+          </div>
+          <div className="catalog-overview-card">
+            <span>Features on this product</span>
+            <strong>{featureCount}</strong>
+          </div>
+          <div className="catalog-overview-card">
+            <span>Included / add-on</span>
+            <strong>
+              {includedCount} included · {addonCount} add-on
+            </strong>
+          </div>
+        </section>
+      )}
+
       {/* ---------------------------------------------------------- products */}
-      <section className="card">
-        <div className="card-head">
-          <h2>Products</h2>
+      <section className="card catalog-card">
+        <div className="catalog-section-head">
+          <div>
+            <div className="catalog-section-kicker">Products</div>
+            <h2>Choose the product you want to manage</h2>
+          </div>
           <button className="ghost sm" onClick={() => setShowProductForm((v) => !v)}>
             {showProductForm ? "Cancel" : "Add product"}
           </button>
@@ -178,11 +211,14 @@ export default function CatalogClient({
         )}
 
         {localProducts.length > 0 && (
-          <div className="pills" style={{ marginTop: showProductForm ? 14 : 0 }}>
+          <div
+            className="catalog-card-grid catalog-product-grid"
+            style={{ marginTop: showProductForm ? 14 : 0 }}
+          >
             {localProducts.map((p) => (
               <button
                 key={p.id}
-                className="pill"
+                className="catalog-select-card"
                 aria-pressed={p.id === product?.id}
                 onClick={() => {
                   setProductId(p.id);
@@ -190,10 +226,15 @@ export default function CatalogClient({
                   setEditingCell(null);
                 }}
               >
-                <span className="pill-name">{p.name}</span>
-                <span className="pill-sub">
-                  {p.tiers.length} {p.tiers.length === 1 ? "tier" : "tiers"} · {p.features.length}{" "}
-                  {p.features.length === 1 ? "feature" : "features"}
+                <span className="catalog-select-icon" aria-hidden>
+                  {p.name.charAt(0).toUpperCase()}
+                </span>
+                <span className="catalog-select-copy">
+                  <span className="catalog-select-title">{p.name}</span>
+                  <span className="catalog-select-meta">
+                    {p.tiers.length} {p.tiers.length === 1 ? "tier" : "tiers"} · {p.features.length}{" "}
+                    {p.features.length === 1 ? "feature" : "features"}
+                  </span>
                 </span>
               </button>
             ))}
@@ -204,9 +245,12 @@ export default function CatalogClient({
       {product && (
         <>
           {/* ------------------------------------------------------- tiers */}
-          <section className="card">
-            <div className="card-head">
-              <h2>Tiers &amp; base price</h2>
+          <section className="card catalog-card">
+            <div className="catalog-section-head">
+              <div>
+                <div className="catalog-section-kicker">Tiers &amp; pricing</div>
+                <h2>Set each package's base seat price</h2>
+              </div>
               <button className="ghost sm" onClick={() => setShowTierForm((v) => !v)}>
                 {showTierForm ? "Cancel" : "Add tier"}
               </button>
@@ -237,11 +281,14 @@ export default function CatalogClient({
             {product.tiers.length === 0 ? (
               <p className="muted">Add a tier to start building the feature matrix.</p>
             ) : (
-              <div className="pills" style={{ marginTop: showTierForm ? 14 : 0 }}>
+              <div
+                className="catalog-card-grid catalog-tier-grid"
+                style={{ marginTop: showTierForm ? 14 : 0 }}
+              >
                 {product.tiers.map((t) => (
                   <button
                     key={t.id}
-                    className="pill"
+                    className="catalog-tier-card"
                     aria-pressed={t.id === activeTierId}
                     onClick={() => {
                       setTierId(t.id);
@@ -249,9 +296,17 @@ export default function CatalogClient({
                       setEditingTierPrice(false);
                     }}
                   >
-                    <span className="pill-name">{t.name}</span>
-                    <span className="pill-sub num">
+                    <span className="catalog-select-title">{t.name}</span>
+                    <span className="catalog-tier-price num">
                       {formatCentsCompact(t.basePriceCents)} / seat / month
+                    </span>
+                    <span className="catalog-select-meta">
+                      {
+                        product.features.filter(
+                          (feature) => feature.cells[t.id]?.availability !== "NOT_AVAILABLE",
+                        ).length
+                      }{" "}
+                      active features on this tier
                     </span>
                   </button>
                 ))}
@@ -259,7 +314,7 @@ export default function CatalogClient({
             )}
 
             {tier && (
-              <div style={{ marginTop: 14 }}>
+              <div className="catalog-inline-note">
                 {editingTierPrice ? (
                   <InlineForm
                     fields={[
@@ -294,9 +349,12 @@ export default function CatalogClient({
           </section>
 
           {/* ---------------------------------------------------- features */}
-          <section className="card">
-            <div className="card-head">
-              <h2>{tier ? `Features on ${tier.name}` : "Features"}</h2>
+          <section className="card catalog-card">
+            <div className="catalog-section-head">
+              <div>
+                <div className="catalog-section-kicker">Feature matrix</div>
+                <h2>{tier ? `Features on ${tier.name}` : "Features"}</h2>
+              </div>
               <button
                 className="ghost sm"
                 disabled={product.tiers.length === 0}
@@ -327,83 +385,85 @@ export default function CatalogClient({
             ) : product.features.length === 0 ? (
               <p className="muted">No features yet. Add one to build the matrix.</p>
             ) : (
-              <table style={{ marginTop: showFeatureForm ? 14 : 0 }}>
-                <thead>
+              <div className="catalog-table-shell" style={{ marginTop: showFeatureForm ? 14 : 0 }}>
+                <table className="catalog-table">
+                  <thead>
                   <tr>
                     <th>Feature</th>
                     <th style={{ width: 150 }}>On {tier.name}</th>
                     <th>Add-on price</th>
                   </tr>
-                </thead>
-                <tbody>
-                  {product.features.map((f) => {
-                    const cell = f.cells[activeTierId];
-                    const availability = cell?.availability ?? "NOT_AVAILABLE";
-                    const isEditing = editingCell === f.id;
+                  </thead>
+                  <tbody>
+                    {product.features.map((f) => {
+                      const cell = f.cells[activeTierId];
+                      const availability = cell?.availability ?? "NOT_AVAILABLE";
+                      const isEditing = editingCell === f.id;
 
-                    return (
-                      <tr key={f.id}>
-                        <td style={{ fontWeight: 500 }}>{f.name}</td>
-                        <td>
-                          <button
-                            className={`badge ${availability}`}
-                            aria-expanded={isEditing}
-                            onClick={() => setEditingCell(isEditing ? null : f.id)}
-                          >
-                            {AVAILABILITY_LABEL[availability]}
-                          </button>
-                        </td>
-                        <td>
-                          {isEditing ? (
-                            <CellEditor
-                              cell={cell}
-                              pending={pending}
-                              onCancel={() => setEditingCell(null)}
-                              onSave={(payload) =>
-                                run(
-                                  () =>
-                                    setAvailability({
-                                      featureId: f.id,
-                                      tierId: activeTierId,
-                                      ...payload,
-                                    }),
-                                  () => {
-                                    updateLocalCell(f.id, activeTierId, {
-                                      availability: payload.availability,
-                                      pricingModel:
-                                        payload.availability === "ADDON"
-                                          ? (payload.pricingModel ?? null)
-                                          : null,
-                                      amountCents:
-                                        payload.availability === "ADDON" &&
-                                        payload.pricingModel !== "PERCENT_OF_PRODUCT" &&
-                                        payload.amountDollars != null
-                                          ? Math.round(Number(payload.amountDollars) * 100)
-                                          : null,
-                                      percentBps:
-                                        payload.availability === "ADDON" &&
-                                        payload.pricingModel === "PERCENT_OF_PRODUCT" &&
-                                        payload.percent != null
-                                          ? Math.round(Number(payload.percent) * 100)
-                                          : null,
-                                    });
-                                    setEditingCell(null);
-                                  },
-                                )
-                              }
-                            />
-                          ) : (
-                            <span className="muted num">{describeCell(cell)}</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      return (
+                        <tr key={f.id}>
+                          <td className="catalog-feature-name">{f.name}</td>
+                          <td>
+                            <button
+                              className={`badge ${availability}`}
+                              aria-expanded={isEditing}
+                              onClick={() => setEditingCell(isEditing ? null : f.id)}
+                            >
+                              {AVAILABILITY_LABEL[availability]}
+                            </button>
+                          </td>
+                          <td>
+                            {isEditing ? (
+                              <CellEditor
+                                cell={cell}
+                                pending={pending}
+                                onCancel={() => setEditingCell(null)}
+                                onSave={(payload) =>
+                                  run(
+                                    () =>
+                                      setAvailability({
+                                        featureId: f.id,
+                                        tierId: activeTierId,
+                                        ...payload,
+                                      }),
+                                    () => {
+                                      updateLocalCell(f.id, activeTierId, {
+                                        availability: payload.availability,
+                                        pricingModel:
+                                          payload.availability === "ADDON"
+                                            ? (payload.pricingModel ?? null)
+                                            : null,
+                                        amountCents:
+                                          payload.availability === "ADDON" &&
+                                          payload.pricingModel !== "PERCENT_OF_PRODUCT" &&
+                                          payload.amountDollars != null
+                                            ? Math.round(Number(payload.amountDollars) * 100)
+                                            : null,
+                                        percentBps:
+                                          payload.availability === "ADDON" &&
+                                          payload.pricingModel === "PERCENT_OF_PRODUCT" &&
+                                          payload.percent != null
+                                            ? Math.round(Number(payload.percent) * 100)
+                                            : null,
+                                      });
+                                      setEditingCell(null);
+                                    },
+                                  )
+                                }
+                              />
+                            ) : (
+                              <span className="muted num">{describeCell(cell)}</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
 
-            <p className="muted" style={{ marginTop: 14 }}>
+            <p className="catalog-inline-note muted">
               Click a status to change it. Setting a feature to <strong>Add-on</strong> asks for its
               pricing model and price <em>on this tier only</em>.
             </p>
@@ -442,18 +502,7 @@ function InlineForm({
   );
 
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: 8,
-        flexWrap: "wrap",
-        alignItems: "center",
-        background: "var(--paper)",
-        border: "1px dashed var(--rule)",
-        borderRadius: "var(--radius-sm)",
-        padding: 12,
-      }}
-    >
+    <div className="inline-form">
       {fields.map((f) => (
         <input
           key={f.name}
@@ -468,7 +517,7 @@ function InlineForm({
           onKeyDown={(e) => {
             if (e.key === "Enter") onSubmit(values);
           }}
-          style={{ width: f.type === "number" ? 170 : 220 }}
+          className={f.type === "number" ? "inline-form-input is-numeric" : "inline-form-input"}
         />
       ))}
       <button className="sm" disabled={pending} onClick={() => onSubmit(values)}>
@@ -517,17 +566,7 @@ function CellEditor({
   const isPercent = model === "PERCENT_OF_PRODUCT";
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        background: "var(--paper)",
-        border: "1px dashed var(--rule)",
-        borderRadius: "var(--radius-sm)",
-        padding: 12,
-      }}
-    >
+    <div className="cell-editor">
       <select
         aria-label="Availability"
         value={availability}
@@ -579,7 +618,7 @@ function CellEditor({
         </>
       )}
 
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="cell-editor-actions">
         <button
           className="sm"
           disabled={pending}

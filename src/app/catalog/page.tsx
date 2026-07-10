@@ -54,13 +54,16 @@ export default async function CatalogPage({
 
     return (
       <>
-        <div className="page-head">
-          <h1>Catalog</h1>
-          <p>
+        <div className="catalog-head">
+          <div className="catalog-head-copy">
+            <div className="catalog-kicker">Products &amp; tiers</div>
+            <h1>Catalog Management</h1>
+          </div>
+          <div className="catalog-head-note">
             Define what the client sells. Every feature sits in one of three states on every tier,
-            and add-ons are priced per tier — the same feature can cost more on Growth than on
+            and add-ons are priced per tier, so the same feature can cost more on Growth than on
             Enterprise.
-          </p>
+          </div>
         </div>
         <CatalogClient products={serialized} initialProductId={selectedId} />
       </>
