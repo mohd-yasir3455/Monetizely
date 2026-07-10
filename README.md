@@ -3,8 +3,10 @@
 A small quoting application: set up a client's product catalog, then build a quote for one of their
 customers and share it as a read-only link.
 
-- **Live app:** _(add your Vercel URL here)_
-- **Example quote:** _(add a shared quote URL here)_
+- **Live app:** https://monetizely-zeta.vercel.app/quotes/new
+- **Example quote:** https://monetizely-zeta.vercel.app/quotes/Ep6y6A7dBdP_
+
+**Github Repo** - https://github.com/mohd-yasir3455/Monetizely
 
 Built with Next.js 15 (App Router), TypeScript, Postgres, and Prisma.
 
@@ -24,7 +26,7 @@ cp .env.example .env
 # Fill in DATABASE_URL and DIRECT_URL from your Postgres provider.
 
 npm run db:push    # create the tables
-npm run db:seed    # load the Acme Analytics catalog from catalog-example.xlsx
+npm run db:seed    # load the Acme Analytics catalog
 npm run dev        # http://localhost:3000
 ```
 
