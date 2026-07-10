@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import PageErrorState from "@/app/components/PageErrorState";
@@ -47,107 +48,118 @@ export default async function QuotePage({ params }: { params: Promise<{ publicId
           )} discount on the per-seat price)`;
 
     return (
-      <article className="doc">
-        <header className="doc-head">
-          <div>
-            <div className="eyebrow">Quote</div>
-            <h1>{quote.name}</h1>
-          </div>
-          <div className="doc-total-card">
-            <span>Total</span>
-            <strong className="num">{formatCents(quote.totalCents)}</strong>
-          </div>
-        </header>
+      <div className="doc-shell">
+        <Link href="/quotes" className="doc-back">
+          ← All quotes
+        </Link>
 
-        <div className="doc-body">
-          <div className="doc-summary-strip">
-            <div className="doc-summary-chip">
-              <span>Customer</span>
-              <strong>{quote.customerName}</strong>
+        <article className="doc">
+          <header className="doc-head">
+            <div>
+              <div className="eyebrow">Quote</div>
+              <h1>{quote.name}</h1>
             </div>
-            <div className="doc-summary-chip">
-              <span>Product</span>
-              <strong>
-                {quote.productName} · {quote.tierName}
-              </strong>
+            <div className="doc-validity">
+              Valid until {asDate(quote.validUntil).toLocaleDateString("en-US", dateFormat)}
             </div>
-            <div className="doc-summary-chip">
-              <span>Term</span>
-              <strong>{termLabel}</strong>
+          </header>
+
+          <div className="doc-body">
+            <div className="doc-meta-grid">
+              <section className="doc-meta-card">
+                <h2 className="doc-section">Quote details</h2>
+                <div className="doc-fields">
+                  <div>
+                    <div className="k">Customer</div>
+                    <div className="v">{quote.customerName}</div>
+                  </div>
+                  <div>
+                    <div className="k">Quote name</div>
+                    <div className="v">{quote.name}</div>
+                  </div>
+                  <div>
+                    <div className="k">Quote date</div>
+                    <div className="v">
+                      {asDate(quote.createdAt).toLocaleDateString("en-US", dateFormat)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="k">Valid until</div>
+                    <div className="v">
+                      {asDate(quote.validUntil).toLocaleDateString("en-US", dateFormat)}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="doc-meta-card">
+                <h2 className="doc-section">What is being purchased</h2>
+                <div className="doc-fields">
+                  <div>
+                    <div className="k">Product</div>
+                    <div className="v">{quote.productName}</div>
+                  </div>
+                  <div>
+                    <div className="k">Tier</div>
+                    <div className="v">{quote.tierName}</div>
+                  </div>
+                  <div>
+                    <div className="k">Seats</div>
+                    <div className="v num">{quote.seats}</div>
+                  </div>
+                  <div>
+                    <div className="k">Term length</div>
+                    <div className="v">{termLabel}</div>
+                  </div>
+                </div>
+              </section>
             </div>
+
+            <section className="doc-ledger">
+              <div className="doc-ledger-head">
+                <h2 className="doc-section">Cost breakdown</h2>
+                <div className="doc-ledger-caption">
+                  Every line shows the pricing math used to reach the amount.
+                </div>
+              </div>
+
+              <table className="doc-table">
+                <thead>
+                  <tr>
+                    <th>Line item</th>
+                    <th>How it was calculated</th>
+                    <th className="right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quote.lineItems.map((li) => (
+                    <tr key={li.id} className={li.kind === "DISCOUNT" ? "discount" : undefined}>
+                      <td className="item">
+                        <div className="doc-line-label">{li.label}</div>
+                      </td>
+                      <td>
+                        <div className="calc">{li.calculation}</div>
+                      </td>
+                      <td className="amount">{formatCents(li.amountCents)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="total">
+                    <td colSpan={2}>Total</td>
+                    <td className="amount">{formatCents(quote.totalCents)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </section>
+
+            <p className="doc-footnote">
+              This link is shareable and read-only. Prices are in USD, exclude tax, and show
+              add-ons separately from any term discount applied to the base product.
+            </p>
           </div>
-
-          <h2 className="doc-section">Quote details</h2>
-          <div className="doc-fields">
-            <div>
-              <div className="k">Customer</div>
-              <div className="v">{quote.customerName}</div>
-            </div>
-            <div>
-              <div className="k">Quote name</div>
-              <div className="v">{quote.name}</div>
-            </div>
-            <div>
-              <div className="k">Quote date</div>
-              <div className="v">{asDate(quote.createdAt).toLocaleDateString("en-US", dateFormat)}</div>
-            </div>
-            <div>
-              <div className="k">Valid until</div>
-              <div className="v">{asDate(quote.validUntil).toLocaleDateString("en-US", dateFormat)}</div>
-            </div>
-          </div>
-
-          <h2 className="doc-section">What is being purchased</h2>
-          <div className="doc-fields">
-            <div>
-              <div className="k">Product</div>
-              <div className="v">{quote.productName}</div>
-            </div>
-            <div>
-              <div className="k">Tier</div>
-              <div className="v">{quote.tierName}</div>
-            </div>
-            <div>
-              <div className="k">Seats</div>
-              <div className="v num">{quote.seats}</div>
-            </div>
-            <div>
-              <div className="k">Term length</div>
-              <div className="v">{termLabel}</div>
-            </div>
-          </div>
-
-          <h2 className="doc-section">Cost breakdown</h2>
-          <table className="doc-table">
-            <thead>
-              <tr>
-                <th>Line item &amp; how it was calculated</th>
-                <th className="right">Amount (USD)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quote.lineItems.map((li) => (
-                <tr key={li.id} className={li.kind === "DISCOUNT" ? "discount" : undefined}>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{li.label}</div>
-                    <div className="calc">{li.calculation}</div>
-                  </td>
-                  <td className="amount">{formatCents(li.amountCents)}</td>
-                </tr>
-              ))}
-              <tr className="total">
-                <td>Total</td>
-                <td className="amount">{formatCents(quote.totalCents)}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <p className="muted" style={{ marginTop: 18 }}>
-            All amounts in USD. Prices exclude tax. Add-on charges are not affected by the
-            term-length discount.
-          </p>
-        </div>
-      </article>
+        </article>
+      </div>
     );
   } catch (error) {
     console.error(error);

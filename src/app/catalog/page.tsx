@@ -12,9 +12,15 @@ export default async function CatalogPage({
   searchParams: Promise<{ product?: string }>;
 }) {
   try {
+    console.log("[CatalogPage] rendering catalog page");
     const { product: selectedId } = await searchParams;
+    console.log("[CatalogPage] resolved search params", { selectedId });
 
     const products = await getCatalogProducts();
+    console.log("[CatalogPage] loaded catalog products", {
+      productCount: products.length,
+      productIds: products.map((product) => product.id),
+    });
 
     const serialized: CatalogProduct[] = products.map((p) => ({
       id: p.id,
@@ -36,6 +42,15 @@ export default async function CatalogPage({
         ),
       })),
     }));
+    console.log("[CatalogPage] serialized catalog payload", {
+      selectedId,
+      serializedProductCount: serialized.length,
+      tierCounts: serialized.map((product) => ({
+        id: product.id,
+        tiers: product.tiers.length,
+        features: product.features.length,
+      })),
+    });
 
     return (
       <>
@@ -51,6 +66,7 @@ export default async function CatalogPage({
       </>
     );
   } catch (error) {
+    console.log("[CatalogPage] failed to load catalog page");
     console.error(error);
     return (
       <>

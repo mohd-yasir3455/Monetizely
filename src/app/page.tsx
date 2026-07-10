@@ -6,7 +6,12 @@ import { getPageErrorMessage } from "@/lib/errors";
 
 export default async function HomePage() {
   try {
+    console.log("[HomePage] rendering dashboard");
     const { productCount, quoteCount } = await getDashboardCounts();
+    console.log("[HomePage] loaded dashboard counts", {
+      productCount,
+      quoteCount,
+    });
 
     return (
       <>
@@ -71,6 +76,7 @@ export default async function HomePage() {
       </>
     );
   } catch (error) {
+    console.log("[HomePage] failed to load dashboard counts");
     console.error(error);
     return (
       <>
