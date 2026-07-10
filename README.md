@@ -94,6 +94,17 @@ each add-on, priced by its model, on the tier the customer picked:
 
 subtotal       = base + all add-ons
 total          = subtotal − (overall discount % × subtotal)
+
+Base price
+× product seats
+× contract months
+− term discount
++ fixed monthly add-ons
++ per-seat add-ons
++ percentage add-ons
+= subtotal
+− overall quote discount
+= final total
 ```
 
 ---
